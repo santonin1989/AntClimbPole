@@ -1,21 +1,38 @@
 <template>
   <div class="container">
+    <!-- 控制面板 -->
     <div class="control-panel panel">
       <h2>Control Panel</h2>
       <!-- 按钮组 -->
       <div class="btn-group">
-        <el-button :disabled="isBegin" class="btn" type="primary" @click="start">开始</el-button>
-        <el-button :disabled="!isBegin" class="btn" type="primary" @click="pause">{{
-          isPaused ? '继续' : '暂停'
-        }}</el-button>
+        <el-button :disabled="isBegin" class="btn" type="primary" @click="start"
+          >开始</el-button
+        >
+        <el-button
+          :disabled="!isBegin"
+          class="btn"
+          type="primary"
+          @click="pause"
+          >{{ isPaused ? '继续' : '暂停' }}</el-button
+        >
         <el-button class="btn" type="primary" @click="reset">重置</el-button>
-        <el-switch v-model="discolor" size="large" active-text="去色" inactive-text="上色" />
+        <el-switch
+          v-model="discolor"
+          size="large"
+          active-text="去色"
+          inactive-text="上色"
+        />
       </div>
       <!-- 自定义速度与初始方向 -->
       <div class="custom-config">
         <!-- 自定义速度 -->
         <div class="speed-config">
-          <el-slider v-model="customSpeed" :min="1" :max="10" :step="1"></el-slider>
+          <el-slider
+            v-model="customSpeed"
+            :min="1"
+            :max="10"
+            :step="1"
+          ></el-slider>
           <p>速度：{{ customSpeed }}</p>
         </div>
         <!-- 初始方向 -->
@@ -66,7 +83,7 @@
         </div>
       </div>
       <!-- 作者有话说 -->
-      <div @click="showComment = !showComment" class="comment">
+      <!-- <div @click="showComment = !showComment" class="comment">
         <p class="comment-title">作者有话说！</p>
         <div :style="{ display: showComment ? 'flex' : 'none' }" class="hover-comment-container">
           <p class="hover-comment">
@@ -76,9 +93,11 @@
             另外，5只蚂蚁全部爬出杆子的时间只有6种情况：28、32、38、44、50、54秒钟
           </p>
         </div>
-      </div>
+      </div> -->
     </div>
+    <!-- 画布 -->
     <canvas id="myCanvas" width="600" height="600" />
+    <!-- 关键时间点 -->
     <div class="key-moment panel">
       <h2>Key Moments</h2>
       <ol>
@@ -90,17 +109,15 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { initAnts } from '@/config/initAnt'
+import { initAnts, increment } from '@/config/initAnt'
 
-const showComment = ref(false) // 是否显示作者有话说
+// const showComment = ref(false) // 是否显示作者有话说
 
 const discolor = ref(false) // 是否去色
 
 let canvas = null // canvas 画布
-
 let ctx = null // canvas 画布的上下文
 
-const increment = 100 // 动画间隔时间（毫秒）
 let currentTime = 0 // 当前时间
 let lastUpdateTime = 0 // 上一次更新的时间
 
@@ -134,8 +151,8 @@ const _init = () => {
   // 实例化杆子
   pole = new Pole(0, 0)
   pole.draw(ctx)
-  // 实例化蚂蚁
-  ants = []
+
+  // 确定蚂蚁的初始方向
   let direction = []
   if (isCustomDirection.value) {
     // 将customDirection数组中的值转换为1或-1
@@ -143,27 +160,39 @@ const _init = () => {
       direction.push(customDirection[i] ? 1 : -1)
     }
   } else {
+    // 否则随机生成
     for (let i = 0; i < customDirection.length; i++) {
       direction.push(Math.random() < 0.5 ? -1 : 1)
     }
   }
+
+  // 清空蚂蚁数组
+  ants = []
+  // 填充蚂蚁数组
   for (let i = 0; i < initAnts.length; i++) {
     const color = discolor.value ? '#797979' : initAnts[i].color
-    const ant = new Ant(initAnts[i].x, initAnts[i].y, direction[i], color, customSpeed.value)
+    const ant = new Ant(
+      initAnts[i].x,
+      initAnts[i].y,
+      direction[i],
+      color,
+      customSpeed.value
+    )
     ants.push(ant)
-    ant.draw(ctx)
+    ant._draw(ctx)
   }
 }
 
 // 动画
-const animate = () => {
+const _animate = () => {
   currentTime = performance.now() // 更新当前时间
   if (outAntCount === ants.length) {
+    // 全部蚂蚁出杆，停止动画
     pause()
   }
   if (isBegin.value && !isPaused.value) {
     if (currentTime - lastUpdateTime >= increment) {
-      // 检查时间间隔
+      // 更新时间
       lastUpdateTime = currentTime
       Timer.increment()
 
@@ -189,7 +218,7 @@ const animate = () => {
 
     // 用setTimeout来控制动画循环
     setTimeout(() => {
-      animate(performance.now()) // 传入当前时间，进行下一次迭代
+      _animate(performance.now()) // 传入当前时间，进行下一次迭代
     }, 0) // 这里设置为0，尽量不阻塞主线程
   }
 }
@@ -202,14 +231,14 @@ const start = () => {
   isBegin.value = true
   keyMoments.value = []
   Timer.reset()
-  animate()
+  _animate()
 }
 
 // 暂停
 const pause = () => {
   isPaused.value = !isPaused.value // 切换暂停和继续的状态
   if (!isPaused.value) {
-    animate()
+    _animate()
   }
 }
 
@@ -263,10 +292,9 @@ class Ant {
     this.direction = direction
     this.speed = speed
     this.color = color
-    this.isOut = false
   }
 
-  draw(ctx) {
+  _draw(ctx) {
     // 绘画：根据当前坐标画三角形
     ctx.beginPath()
     ctx.moveTo(this.x, this.y)
@@ -277,7 +305,7 @@ class Ant {
     ctx.font = '16px Arial'
     ctx.textAlign = 'center'
     ctx.fillText(this.name, this.x, this.y - 40)
-    // 再顶部写方向
+    // 在顶部写方向
     if (this.direction === 1) {
       ctx.fillText('→', this.x, this.y - 60)
     } else if (this.direction === -1) {
@@ -288,31 +316,29 @@ class Ant {
     ctx.fill()
   }
 
-  move() {
-    // 计算时间差（毫秒）
+  _move() {
     const timeDelta = increment / 1000 // 转换为秒
     // 更新位置
     this.x += this.speed * this.direction * timeDelta
     // 边界检测，返回值表示在哪个方向出界
-    if (this.x <= 0) {
-      this.isOut = true
-      keyMoments.value.push(`第${Timer.getCurrentTime() / 1000}秒 蚂蚁 ${this.name} 出界，向左`)
-      outAntCount++
-    } else if (this.x >= 300) {
-      this.isOut = true
-      keyMoments.value.push(`第${Timer.getCurrentTime() / 1000}秒 蚂蚁 ${this.name} 出界，向右`)
+    if (this.x <= 0 || this.x >= 300) {
+      // 从ants数组中删除出界的蚂蚁
+      ants.splice(ants.indexOf(this), 1)
+      keyMoments.value.push(
+        `第${Timer.getCurrentTime() / 1000}秒 蚂蚁 ${this.name} 出界，向${this.direction === 1 ? '右' : '左'}`
+      )
       outAntCount++
     }
   }
 
+  // 依次调用move和draw方法
   update(ctx) {
-    if (this.isOut) return
-    this.move()
-    this.draw(ctx)
+    this._move()
+    this._draw(ctx)
   }
 
+  // 碰撞检测
   collision(other) {
-    if (this.isOut || other.isOut) return
     const deltaX = Math.abs(this.x - other.x)
     if (deltaX < 1 && this.direction !== other.direction) {
       this.direction = -this.direction

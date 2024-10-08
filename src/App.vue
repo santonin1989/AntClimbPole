@@ -1,5 +1,5 @@
 <script setup>
-import AntClimb from './components/AntClimb.vue';
+import AntClimb from './components/AntClimb.vue'
 </script>
 
 <template>

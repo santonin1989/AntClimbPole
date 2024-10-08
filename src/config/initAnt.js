@@ -1,3 +1,7 @@
+// 动画间隔时间
+export const increment = 100
+
+// 蚂蚁的初始状态
 export const initAnts = [
   {
     x: 30,
