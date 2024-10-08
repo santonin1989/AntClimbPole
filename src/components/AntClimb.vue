@@ -126,7 +126,7 @@ const isBegin = ref(false) // 是否开始
 
 let ants = [] // 蚂蚁数组
 
-let outAntCount = 0 // 蚂蚁出杆的数量
+let outCount = 0 // 出杆蚂蚁数
 
 const keyMoments = ref([])
 
@@ -186,7 +186,7 @@ const _init = () => {
 // 动画
 const _animate = () => {
   currentTime = performance.now() // 更新当前时间
-  if (outAntCount === ants.length) {
+  if (ants.length === outCount) {
     // 全部蚂蚁出杆，停止动画
     pause()
   }
@@ -226,7 +226,7 @@ const _animate = () => {
 // 开始
 const start = () => {
   _init()
-  outAntCount = 0
+  outCount = 0
   isPaused.value = false
   isBegin.value = true
   keyMoments.value = []
@@ -244,6 +244,7 @@ const pause = () => {
 
 // 重置
 const reset = () => {
+  outCount = 0
   isPaused.value = false
   isBegin.value = false
   Timer.reset()
@@ -292,6 +293,7 @@ class Ant {
     this.direction = direction
     this.speed = speed
     this.color = color
+    this.isOut - false
   }
 
   _draw(ctx) {
@@ -322,23 +324,26 @@ class Ant {
     this.x += this.speed * this.direction * timeDelta
     // 边界检测，返回值表示在哪个方向出界
     if (this.x <= 0 || this.x >= 300) {
-      // 从ants数组中删除出界的蚂蚁
-      ants.splice(ants.indexOf(this), 1)
+      // 使用boolean变量isOut来标记是否出界
+      // 为什么不从ants数组中删除？因为删除后数组的索引会变化，导致其他蚂蚁的索引也会变化，导致出错
+      this.isOut = true
+      outCount++
       keyMoments.value.push(
         `第${Timer.getCurrentTime() / 1000}秒 蚂蚁 ${this.name} 出界，向${this.direction === 1 ? '右' : '左'}`
       )
-      outAntCount++
     }
   }
 
   // 依次调用move和draw方法
   update(ctx) {
+    if (this.isOut) return
     this._move()
     this._draw(ctx)
   }
 
   // 碰撞检测
   collision(other) {
+    if (this.isOut || other.isOut) return
     const deltaX = Math.abs(this.x - other.x)
     if (deltaX < 1 && this.direction !== other.direction) {
       this.direction = -this.direction
