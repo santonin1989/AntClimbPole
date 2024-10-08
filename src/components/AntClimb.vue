@@ -109,7 +109,8 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { initAnts, increment } from '@/config/initAnt'
+import { initAnts, increment } from '@/config'
+import { Ant, Pole, Timer } from '@/class'
 
 // const showComment = ref(false) // 是否显示作者有话说
 
@@ -125,8 +126,7 @@ const isPaused = ref(false) // 是否暂停
 const isBegin = ref(false) // 是否开始
 
 let ants = [] // 蚂蚁数组
-
-let outCount = 0 // 出杆蚂蚁数
+let outCount = ref(0) // 出杆蚂蚁数
 
 const keyMoments = ref([])
 
@@ -186,7 +186,7 @@ const _init = () => {
 // 动画
 const _animate = () => {
   currentTime = performance.now() // 更新当前时间
-  if (ants.length === outCount) {
+  if (ants.length === outCount.value) {
     // 全部蚂蚁出杆，停止动画
     pause()
   }
@@ -197,21 +197,18 @@ const _animate = () => {
       Timer.increment()
 
       _clear(ctx)
-
-      _drawTimer()
-
-      // 绘制杆子
+      Timer.draw(ctx)
       pole.draw(ctx)
 
       // 更新蚂蚁
       for (let i = 0; i < ants.length; i++) {
-        ants[i].update(ctx)
+        ants[i].update(ctx, outCount, keyMoments)
       }
 
       // 碰撞检测
       for (let i = 0; i < ants.length; i++) {
         for (let j = i + 1; j < ants.length; j++) {
-          ants[i].collision(ants[j])
+          ants[i].collision(ants[j], keyMoments)
         }
       }
     }
@@ -226,7 +223,7 @@ const _animate = () => {
 // 开始
 const start = () => {
   _init()
-  outCount = 0
+  outCount.value = 0
   isPaused.value = false
   isBegin.value = true
   keyMoments.value = []
@@ -244,7 +241,7 @@ const pause = () => {
 
 // 重置
 const reset = () => {
-  outCount = 0
+  outCount.value = 0
   isPaused.value = false
   isBegin.value = false
   Timer.reset()
@@ -252,124 +249,9 @@ const reset = () => {
   _init()
 }
 
-// 绘制时间
-const _drawTimer = () => {
-  // 将timer画到(150, -150)
-  ctx.beginPath()
-  ctx.font = '20px Arial'
-  ctx.fillStyle = '#181818'
-  ctx.textAlign = 'center'
-  ctx.fillText((Timer.getCurrentTime() / 1000).toFixed(1), 150, -160)
-}
-
 // 清空画布
 const _clear = (ctx) => {
   ctx.clearRect(-150, -300, 600, 600) // 清除整个画布
-}
-
-class Pole {
-  // 构造函数：定义起始点和长度
-  constructor(x, y, length = 300) {
-    this.x = x
-    this.y = y
-    this.length = length
-  }
-
-  // 绘画：根据当前坐标画矩形
-  draw(ctx) {
-    ctx.beginPath()
-    ctx.rect(this.x, this.y, this.length, 8)
-    ctx.fillStyle = '#4E4E4E'
-    ctx.fill()
-  }
-}
-
-class Ant {
-  // direction: 1表示向右，-1表示向左，0表示静止
-  constructor(x, y, direction = 0, color = '#797979', speed = 5) {
-    this.name = x
-    this.x = x
-    this.y = y
-    this.direction = direction
-    this.speed = speed
-    this.color = color
-    this.isOut - false
-  }
-
-  _draw(ctx) {
-    // 绘画：根据当前坐标画三角形
-    ctx.beginPath()
-    ctx.moveTo(this.x, this.y)
-    ctx.lineTo(this.x + 8, this.y - 30)
-    ctx.lineTo(this.x - 8, this.y - 30)
-    ctx.fillStyle = this.color
-    // 顶部写文字
-    ctx.font = '16px Arial'
-    ctx.textAlign = 'center'
-    ctx.fillText(this.name, this.x, this.y - 40)
-    // 在顶部写方向
-    if (this.direction === 1) {
-      ctx.fillText('→', this.x, this.y - 60)
-    } else if (this.direction === -1) {
-      ctx.fillText('←', this.x, this.y - 60)
-    } else {
-      ctx.fillText('-', this.x, this.y - 60)
-    }
-    ctx.fill()
-  }
-
-  _move() {
-    const timeDelta = increment / 1000 // 转换为秒
-    // 更新位置
-    this.x += this.speed * this.direction * timeDelta
-    // 边界检测，返回值表示在哪个方向出界
-    if (this.x <= 0 || this.x >= 300) {
-      // 使用boolean变量isOut来标记是否出界
-      // 为什么不从ants数组中删除？因为删除后数组的索引会变化，导致其他蚂蚁的索引也会变化，导致出错
-      this.isOut = true
-      outCount++
-      keyMoments.value.push(
-        `第${Timer.getCurrentTime() / 1000}秒 蚂蚁 ${this.name} 出界，向${this.direction === 1 ? '右' : '左'}`
-      )
-    }
-  }
-
-  // 依次调用move和draw方法
-  update(ctx) {
-    if (this.isOut) return
-    this._move()
-    this._draw(ctx)
-  }
-
-  // 碰撞检测
-  collision(other) {
-    if (this.isOut || other.isOut) return
-    const deltaX = Math.abs(this.x - other.x)
-    if (deltaX < 1 && this.direction !== other.direction) {
-      this.direction = -this.direction
-      other.direction = -other.direction
-      keyMoments.value.push(
-        `第${Timer.getCurrentTime() / 1000}秒 蚂蚁 ${this.name} 和 ${other.name} 碰撞`
-      )
-    }
-  }
-}
-
-class Timer {
-  // 单位：毫秒
-  static #currentTime = 0
-
-  static increment() {
-    Timer.#currentTime += increment
-  }
-
-  static getCurrentTime() {
-    return Timer.#currentTime
-  }
-
-  static reset() {
-    Timer.#currentTime = 0
-  }
 }
 </script>
 
