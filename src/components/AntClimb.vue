@@ -206,10 +206,9 @@ const _animate = () => {
       }
 
       // 碰撞检测
-      for (let i = 0; i < ants.length; i++) {
-        for (let j = i + 1; j < ants.length; j++) {
-          ants[i].collision(ants[j], keyMoments)
-        }
+      for (let i = 0; i < ants.length - 1; i++) {
+        // 由于蚂蚁只有可能与相邻的蚂蚁碰撞，所以无需双层循环
+        ants[i].collision(ants[i + 1], keyMoments)
       }
     }
 
