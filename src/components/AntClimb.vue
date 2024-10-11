@@ -5,11 +5,11 @@
       <h2>Control Panel</h2>
       <!-- 按钮组 -->
       <div class="btn-group">
-        <el-button :disabled="isBegin" class="btn" type="primary" @click="start"
+        <el-button :disabled="isRun" class="btn" type="primary" @click="start"
           >开始</el-button
         >
         <el-button
-          :disabled="!isBegin"
+          :disabled="!isRun"
           class="btn"
           type="primary"
           @click="pause"
@@ -123,7 +123,7 @@ let currentTime = 0 // 当前时间
 let lastUpdateTime = 0 // 上一次更新的时间
 
 const isPaused = ref(false) // 是否暂停
-const isBegin = ref(false) // 是否开始
+const isRun = ref(false) // 是否进行
 
 let ants = [] // 蚂蚁数组
 let outCount = ref(0) // 出杆蚂蚁数
@@ -190,7 +190,7 @@ const _animate = () => {
     // 全部蚂蚁出杆，停止动画
     pause()
   }
-  if (isBegin.value && !isPaused.value) {
+  if (isRun.value && !isPaused.value) {
     if (currentTime - lastUpdateTime >= increment) {
       // 更新时间
       lastUpdateTime = currentTime
@@ -223,11 +223,7 @@ const _animate = () => {
 // 开始
 const start = () => {
   _init()
-  outCount.value = 0
-  isPaused.value = false
-  isBegin.value = true
-  keyMoments.value = []
-  Timer.reset()
+  isRun.value = true
   _animate()
 }
 
@@ -243,7 +239,8 @@ const pause = () => {
 const reset = () => {
   outCount.value = 0
   isPaused.value = false
-  isBegin.value = false
+  isRun.value = false
+  keyMoments.value = []
   Timer.reset()
   _clear(ctx)
   _init()

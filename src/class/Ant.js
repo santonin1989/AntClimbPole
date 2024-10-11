@@ -10,7 +10,7 @@ export default class Ant {
     this.direction = direction
     this.speed = speed
     this.color = color
-    this.isOut - false
+    this.isOut = false
   }
 
   _draw(ctx) {
@@ -45,6 +45,7 @@ export default class Ant {
       // 为什么不从ants数组中删除？因为删除后数组的索引会变化，导致其他蚂蚁的索引也会变化，导致出错
       this.isOut = true
       outCount.value++
+      // 记录出界信息
       keyMoments.value.push(
         `第${Timer.getCurrentTime() / 1000}秒 蚂蚁 ${this.name} 出界，向${this.direction === 1 ? '右' : '左'}`
       )
@@ -60,11 +61,14 @@ export default class Ant {
 
   // 碰撞检测
   collision(other, keyMoments) {
+    // 出界的蚂蚁不参与碰撞检测
     if (this.isOut || other.isOut) return
     const deltaX = Math.abs(this.x - other.x)
     if (deltaX < 1 && this.direction !== other.direction) {
+      // 碰撞后改变方向
       this.direction = -this.direction
       other.direction = -other.direction
+      // 记录碰撞信息
       keyMoments.value.push(
         `第${Timer.getCurrentTime() / 1000}秒 蚂蚁 ${this.name} 和 ${other.name} 碰撞`
       )
